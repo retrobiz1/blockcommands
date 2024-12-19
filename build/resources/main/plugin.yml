@@ -1,0 +1,4 @@
+name: blockcommands
+version: '1.0'
+main: org.retrobiz.blockcommands
+api-version: '1.20'
