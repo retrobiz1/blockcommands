@@ -1,12 +1,12 @@
 package org.retrobiz.blockcommands;
 
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin implements Listener {
@@ -27,6 +27,7 @@ public class Main extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
+        player.sendMessage("§c It's work");
 
         if (player.getName().equalsIgnoreCase(BLOCKED_PLAYER)) {
             event.setCancelled(true);
@@ -34,13 +35,11 @@ public class Main extends JavaPlugin implements Listener {
         }
     }
 
-    @Override
-    public boolean onCommand(org.bukkit.command.CommandSender sender, org.bukkit.command.Command command, String label, String[] args) {
-        if (sender instanceof ConsoleCommandSender) {
-            sender.sendMessage("§c консоль ушла делать огэ и тебе пора!");
-            return true;
+    @EventHandler
+    public void onCommand(ServerCommandEvent event) {
+        if (event.getSender() instanceof ConsoleCommandSender) {
+            event.getSender().sendMessage("§c консоль ушла делать огэ и тебе пора!");
+            event.setCancelled(true);
         }
-
-        return false;
     }
 }
