@@ -1,4 +1,4 @@
-package org.retrobiz.blockcommands;
+package org.RetroBiz.blockcommands;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.ConsoleCommandSender;
