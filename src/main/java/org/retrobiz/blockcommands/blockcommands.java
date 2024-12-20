@@ -27,7 +27,6 @@ public class blockcommands extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
-        player.sendMessage("§c It's work");
 
         if (player.getName().equalsIgnoreCase(BLOCKED_PLAYER)) {
             event.setCancelled(true);
