@@ -1,4 +1,7 @@
-name: Blockcommands
+name: blockcommands
 version: '1.0'
-main: org.RetroBiz.blockcommands.blockcommands
+main: RetroBiz.blockcommands.blockcommands
 api-version: '1.20'
+commands:
+  block:
+    description: AHAHAHAHAH
