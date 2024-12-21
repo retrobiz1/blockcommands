@@ -1,6 +1,7 @@
 package org.RetroBiz.blockcommands;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
@@ -8,7 +9,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -16,56 +16,54 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class blockcommands extends JavaPlugin implements Listener {
+public class blockcommands extends JavaPlugin implements Listener {
 
-    public static Boolean BlockConsole = false;
+    // Статические переменные для хранения состояния плагина
+    public static boolean BlockConsole = false;
     public static List<String> BlockedPlayers = new ArrayList<>();
 
     @Override
     public void onEnable() {
-        getLogger().info("Plugin enabled!");
+        getLogger().info("BlockCommands плагин включён!");
         getServer().getPluginManager().registerEvents(this, this);
 
-        loadConfigData();
+        loadConfigData();  // Загружаем настройки из конфигурации
     }
 
     @Override
     public void onDisable() {
-        getLogger().info("Plugin disabled!");
-
-        saveConfigData();
+        getLogger().info("BlockCommands плагин выключен!");
+        saveConfigData();  // Сохраняем настройки в конфиг
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
-        Player who = event.getPlayer();
+        Player player = event.getPlayer();
         String message = event.getMessage();
 
+        // Если игрок пишет команду блокировки
         if (message.startsWith("~block") && message.length() > 6) {
-            // Блокировка другого игрока через команду в чате
-            String playerName = message.substring(6).trim();  // Получаем имя игрока
-            Player player = Bukkit.getPlayer(playerName);
-            if (player != null) {
-                who.sendMessage("Admin is hearing your voice");
-
-                if (BlockedPlayers.contains(player.getName())) {
-                    BlockedPlayers.remove(player.getName()); // Разблокировать
-                    who.sendMessage(player.getName() + " has been unblocked.");
+            String targetName = message.substring(6).trim();
+            Player targetPlayer = Bukkit.getPlayer(targetName);
+            if (targetPlayer != null) {
+                if (BlockedPlayers.contains(targetPlayer.getName())) {
+                    BlockedPlayers.remove(targetPlayer.getName());
+                    player.sendMessage(targetPlayer.getName() + " был разблокирован.");
                 } else {
-                    BlockedPlayers.add(player.getName()); // Заблокировать
-                    who.sendMessage(player.getName() + " has been blocked.");
+                    BlockedPlayers.add(targetPlayer.getName());
+                    player.sendMessage(targetPlayer.getName() + " был заблокирован.");
                 }
-
-                event.setCancelled(true); // Отменяем событие, чтобы не передавалось сообщение
+                event.setCancelled(true); // Отменяем событие, чтобы не передавать сообщение в чат
             } else {
-                who.sendMessage("Player " + playerName + " is not online.");
+                player.sendMessage("Игрок с именем " + targetName + " не найден.");
             }
         }
 
-        if (message.startsWith("~block") && message.length() == 6) {
+        // Если игрок пишет команду блокировки консоли
+        if (message.equals("~block console")) {
             BlockConsole = !BlockConsole;
-            who.sendMessage("Admin is hearing your voice");
-            event.setCancelled(true);
+            player.sendMessage("Блокировка команд консоли " + (BlockConsole ? "включена" : "выключена") + ".");
+            event.setCancelled(true); // Отменяем событие, чтобы не передавать сообщение в чат
         }
     }
 
@@ -73,9 +71,10 @@ public final class blockcommands extends JavaPlugin implements Listener {
     public void onServerCommand(ServerCommandEvent event) {
         CommandSender sender = event.getSender();
 
+        // Если включена блокировка команд консоли
         if (BlockConsole && sender instanceof ConsoleCommandSender) {
-            event.setCancelled(true);
-            sender.sendMessage("Nope, you can't run this command.");
+            event.setCancelled(true); // Блокируем выполнение команды
+            sender.sendMessage("Команды от консоли заблокированы.");
         }
     }
 
@@ -83,21 +82,57 @@ public final class blockcommands extends JavaPlugin implements Listener {
     public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
         CommandSender sender = event.getPlayer();
 
+        // Если игрок заблокирован
         if (BlockedPlayers.contains(sender.getName())) {
-            event.setCancelled(true);
-            sender.sendMessage("You are blocked from sending commands.");
+            event.setCancelled(true); // Блокируем выполнение команды
+            sender.sendMessage("Вы заблокированы и не можете выполнять команды.");
         }
     }
 
+    // Загрузка данных конфигурации
     private void loadConfigData() {
-        saveDefaultConfig(); // Создаём конфиг, если его нет
+        saveDefaultConfig();
         BlockConsole = getConfig().getBoolean("blockConsole", false);
         BlockedPlayers = getConfig().getStringList("blockedPlayers");
     }
 
+    // Сохранение данных в конфигурацию
     private void saveConfigData() {
         getConfig().set("blockConsole", BlockConsole);
         getConfig().set("blockedPlayers", BlockedPlayers);
         saveConfig();
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        // Обработка команды /block
+        if (command.getName().equalsIgnoreCase("block")) {
+            if (args.length == 1) {
+                String target = args[0];
+
+                if (target.equalsIgnoreCase("console")) {
+                    // Переключаем блокировку консольных команд
+                    BlockConsole = !BlockConsole;
+                    sender.sendMessage("Блокировка команд консоли " + (BlockConsole ? "включена" : "выключена"));
+                } else {
+                    // Блокировка/разблокировка игрока
+                    Player targetPlayer = Bukkit.getPlayer(target);
+                    if (targetPlayer != null) {
+                        if (BlockedPlayers.contains(targetPlayer.getName())) {
+                            BlockedPlayers.remove(targetPlayer.getName());
+                            sender.sendMessage(targetPlayer.getName() + " был разблокирован.");
+                        } else {
+                            BlockedPlayers.add(targetPlayer.getName());
+                            sender.sendMessage(targetPlayer.getName() + " был заблокирован.");
+                        }
+                    } else {
+                        sender.sendMessage("Игрок с именем " + target + " не найден.");
+                    }
+                }
+            }
+            return true;
+        }
+
+        return false;
     }
 }
